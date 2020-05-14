@@ -1,17 +1,20 @@
-import os
 from flask import Flask, request, abort, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
 
-from models import setup_db, Question, Category
+from models import db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
-def create_app(test_config=None):
+def create_app(config_object='config.Config'):
     # create and configure the app
     app = Flask(__name__)
-    setup_db(app)
+    if app.config['ENV'] == 'development':
+        config_object = 'config.DevelopmentConfig'
+    app.config.from_object(config_object)
+    db.init_app(app)
+    with app.app_context():
+        db.create_all()
 
     CORS(app)
 
