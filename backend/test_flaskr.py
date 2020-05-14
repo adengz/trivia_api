@@ -20,11 +20,34 @@ class TriviaTestCase(unittest.TestCase):
         with cls.app.app_context():
             # create all tables
             cls.db.create_all()
+            # create test db entries
+            category = Category(type='category')
+            cls.db.session.add(category)
+            question = Question(question='question?', answer='answer',
+                                category=1, difficulty=1)
+            cls.db.session.add(question)
+            cls.db.session.commit()
 
     @classmethod
     def tearDownClass(cls):
         with cls.app.app_context():
             cls.db.drop_all()
+
+    def test_get_paginated_questions(self):
+        res = self.client().get('/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'])
+        self.assertEqual(len(data['questions']), 1)
+        self.assertEqual(data['total_questions'], 1)
+        self.assertEqual(len(data['categories']), 1)
+        self.assertIsNone(data['current_category'])
+
+    def test_404_get_paginated_questions_out_of_range(self):
+        res = self.client().get('/questions?page=100')
+        self.assertEqual(res.status_code, 404)
+        self.assertFalse(json.loads(res.data)['success'])
 
     """
     TODO

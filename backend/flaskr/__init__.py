@@ -32,6 +32,23 @@ def create_app(config_object='config.Config'):
         return jsonify({'success': True,
                         'categories': {c.id: c.type for c in categories}})
 
+    @app.route('/questions', methods=['GET'])
+    def get_paginated_questions():
+        page = request.args.get('page', 1, type=int)
+        questions = Question.query.order_by(Question.id).all()
+        start = QUESTIONS_PER_PAGE * (page - 1)
+        end = start + QUESTIONS_PER_PAGE
+        paginated = questions[start:end]
+
+        if not paginated:
+            abort(404)
+        categories = Category.query.all()
+        return jsonify({'success': True,
+                        'questions': [q.format() for q in paginated],
+                        'total_questions': len(questions),
+                        'categories': {c.id: c.type for c in categories},
+                        'current_category': None})
+
 
     '''
     @TODO: 
