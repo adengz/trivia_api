@@ -68,16 +68,20 @@ def create_app(config_object='config.Config'):
     of the questions list in the "List" tab.  
     '''
 
-    '''
-    @TODO: 
-    Create a POST endpoint to get questions based on a search term. 
-    It should return any questions for whom the search term 
-    is a substring of the question. 
-  
-    TEST: Search by any phrase. The questions list will update to include 
-    only question that include that string within their question. 
-    Try using the word "title" to start. 
-    '''
+    @app.route('/questions/searches', methods=['POST'])
+    def search_questions():
+        data = request.get_json()
+        if 'searchTerm' not in data:
+            abort(400)
+        search_term = data['searchTerm']
+        if not search_term:
+            abort(422)
+
+        questions = Question.query.filter(Question.question.like('%{}%'.format(search_term))).order_by(Question.id).all()
+        return jsonify({'success': True,
+                        'questions': [q.format() for q in questions],
+                        'total_questions': len(questions),
+                        'current_category': None})
 
     @app.route('/categories/<int:category>/questions', methods=['GET'])
     def get_questions_in_category(category):

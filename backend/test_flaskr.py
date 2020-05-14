@@ -49,6 +49,33 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertFalse(json.loads(res.data)['success'])
 
+    def test_search_questions(self):
+        res = self.client().post('/questions/searches', json={'searchTerm': 'question'})
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'])
+        self.assertGreater(len(data['questions']), 0)
+        self.assertGreater(data['total_questions'], 0)
+        self.assertIsNone(data['current_category'])
+        self.assertNotIn('categories', data)
+
+    def test_422_search_questions_empty_term(self):
+        res = self.client().post('/questions/searches', json={'searchTerm': ''})
+        self.assertEqual(res.status_code, 422)
+        self.assertFalse(json.loads(res.data)['success'])
+
+    def test_200_search_questions_no_results(self):
+        res = self.client().post('/questions/searches', json={'searchTerm': 'answer'})
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'])
+        self.assertEqual(len(data['questions']), 0)
+        self.assertEqual(data['total_questions'], 0)
+        self.assertIsNone(data['current_category'])
+        self.assertNotIn('categories', data)
+
     def test_get_questions_in_category(self):
         res = self.client().get('/categories/1/questions')
         data = json.loads(res.data)
