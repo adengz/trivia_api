@@ -1,33 +1,30 @@
 import os
 import unittest
 import json
-from flask_sqlalchemy import SQLAlchemy
 
 from flaskr import create_app
-from models import setup_db, Question, Category
+from models import db, Question, Category
 
 
 class TriviaTestCase(unittest.TestCase):
     """This class represents the trivia test case"""
 
-    def setUp(self):
-        """Define test variables and initialize app."""
-        self.app = create_app()
-        self.client = self.app.test_client
-        self.database_name = "trivia_test"
-        self.database_path = "postgres://{}/{}".format('localhost:5432', self.database_name)
-        setup_db(self.app, self.database_path)
+    @classmethod
+    def setUpClass(cls):
+        cls.app = create_app('config.TestingConfig')
+        cls.client = cls.app.test_client
+        cls.db = db
+        cls.db.init_app(cls.app)
 
         # binds the app to the current context
-        with self.app.app_context():
-            self.db = SQLAlchemy()
-            self.db.init_app(self.app)
+        with cls.app.app_context():
             # create all tables
-            self.db.create_all()
-    
-    def tearDown(self):
-        """Executed after reach test"""
-        pass
+            cls.db.create_all()
+
+    @classmethod
+    def tearDownClass(cls):
+        with cls.app.app_context():
+            cls.db.drop_all()
 
     """
     TODO
