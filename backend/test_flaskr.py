@@ -39,13 +39,29 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['success'])
-        self.assertEqual(len(data['questions']), 1)
-        self.assertEqual(data['total_questions'], 1)
-        self.assertEqual(len(data['categories']), 1)
+        self.assertGreater(len(data['questions']), 0)
+        self.assertGreater(data['total_questions'], 0)
+        self.assertGreater(len(data['categories']), 0)
         self.assertIsNone(data['current_category'])
 
     def test_404_get_paginated_questions_out_of_range(self):
         res = self.client().get('/questions?page=100')
+        self.assertEqual(res.status_code, 404)
+        self.assertFalse(json.loads(res.data)['success'])
+
+    def test_get_questions_in_category(self):
+        res = self.client().get('/categories/1/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'])
+        self.assertGreater(len(data['questions']), 0)
+        self.assertGreater(data['total_questions'], 0)
+        self.assertIsNotNone(data['current_category'])
+        self.assertNotIn('categories', data)
+
+    def test_404_get_questions_in_category_empty(self):
+        res = self.client().get('/categories/100/questions')
         self.assertEqual(res.status_code, 404)
         self.assertFalse(json.loads(res.data)['success'])
 

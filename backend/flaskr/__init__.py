@@ -49,20 +49,6 @@ def create_app(config_object='config.Config'):
                         'categories': {c.id: c.type for c in categories},
                         'current_category': None})
 
-
-    '''
-    @TODO: 
-    Create an endpoint to handle GET requests for questions, 
-    including pagination (every 10 questions). 
-    This endpoint should return a list of questions, 
-    number of total questions, current category, categories. 
-  
-    TEST: At this point, when you start the application
-    you should see questions and categories generated,
-    ten questions per page and pagination at the bottom of the screen for three pages.
-    Clicking on the page numbers should update the questions. 
-    '''
-
     '''
     @TODO: 
     Create an endpoint to DELETE question using a question ID. 
@@ -93,14 +79,16 @@ def create_app(config_object='config.Config'):
     Try using the word "title" to start. 
     '''
 
-    '''
-    @TODO: 
-    Create a GET endpoint to get questions based on category. 
-  
-    TEST: In the "List" tab / main screen, clicking on one of the 
-    categories in the left column will cause only questions of that 
-    category to be shown. 
-    '''
+    @app.route('/categories/<int:category>/questions', methods=['GET'])
+    def get_questions_in_category(category):
+        questions = Question.query.filter_by(category=category).order_by(Question.id).all()
+        if not questions:
+            abort(404)
+
+        return jsonify({'success': True,
+                        'questions': [q.format() for q in questions],
+                        'total_questions': len(questions),
+                        'current_category': category})
 
 
     '''
