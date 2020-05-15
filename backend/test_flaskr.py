@@ -50,6 +50,8 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().delete('/questions/1')
         self.assertEqual(res.status_code, 200)
         self.assertTrue(json.loads(res.data)['success'])
+        with self.app.app_context():
+            self.assertIsNone(Question.query.get(1))
 
     def test_404_delete_question_not_present(self):
         res = self.client().delete('/questions/100')
@@ -66,6 +68,11 @@ class TriviaTestCase(unittest.TestCase):
         self.assertGreater(data['total_questions'], 0)
         self.assertIsNone(data['current_category'])
         self.assertNotIn('categories', data)
+
+    def test_400_search_questions_wrong_key(self):
+        res = self.client().post('/questions/searches', json={'search_term': ''})
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(json.loads(res.data)['success'])
 
     def test_422_search_questions_empty_term(self):
         res = self.client().post('/questions/searches', json={'searchTerm': ''})
