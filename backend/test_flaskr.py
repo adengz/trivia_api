@@ -58,6 +58,44 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertFalse(json.loads(res.data)['success'])
 
+    def test_add_question(self):
+        res = self.client().post('/questions', json=dict(question='another question?',
+                                                         answer='another answer',
+                                                         difficulty=2, category=1))
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(json.loads(res.data)['success'])
+        with self.app.app_context():
+            q = Question.query.get(2)
+            self.assertEqual(q.question, 'another question?')
+            self.assertEqual(q.answer, 'another answer')
+            self.assertEqual(q.difficulty, 2)
+            self.assertEqual(q.category, 1)
+
+    def test_400_add_question_wrong_args(self):
+        res1 = self.client().post('/questions', json=dict(question='another question?',
+                                                          answer='another answer',
+                                                          category=1))
+        self.assertEqual(res1.status_code, 400)
+        self.assertFalse(json.loads(res1.data)['success'])
+
+        res2 = self.client().post('/questions', json=dict(question='another question?',
+                                                          answer='another answer',
+                                                          difficulty=2, category=1,
+                                                          wrong_arg=None))
+        self.assertEqual(res2.status_code, 400)
+        self.assertFalse(json.loads(res2.data)['success'])
+
+    def test_422_add_question_invalid_args(self):
+        res1 = self.client().post('/questions', json=dict(question='', answer='',
+                                                          difficulty=2, category=1))
+        self.assertEqual(res1.status_code, 422)
+        self.assertFalse(json.loads(res1.data)['success'])
+
+        res2 = self.client().post('/questions', json=dict(question='q', answer='a',
+                                                          difficulty=10, category='none'))
+        self.assertEqual(res2.status_code, 422)
+        self.assertFalse(json.loads(res2.data)['success'])
+
     def test_search_questions(self):
         res = self.client().post('/questions/searches', json={'searchTerm': 'question'})
         data = json.loads(res.data)
