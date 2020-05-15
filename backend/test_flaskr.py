@@ -59,9 +59,9 @@ class TriviaTestCase(unittest.TestCase):
         self.assertFalse(json.loads(res.data)['success'])
 
     def test_add_question(self):
-        res = self.client().post('/questions', json=dict(question='another question?',
-                                                         answer='another answer',
-                                                         difficulty=2, category=1))
+        res = self.client().post('/questions', json={'question': 'another question?',
+                                                     'answer': 'another answer',
+                                                     'difficulty': 2, 'category': 1})
         self.assertEqual(res.status_code, 200)
         self.assertTrue(json.loads(res.data)['success'])
         with self.app.app_context():
@@ -72,27 +72,27 @@ class TriviaTestCase(unittest.TestCase):
             self.assertEqual(q.category, 1)
 
     def test_400_add_question_wrong_args(self):
-        res1 = self.client().post('/questions', json=dict(question='another question?',
-                                                          answer='another answer',
-                                                          category=1))
+        res1 = self.client().post('/questions', json={'question': 'another question?',
+                                                      'answer': 'another answer',
+                                                      'category': 1})
         self.assertEqual(res1.status_code, 400)
         self.assertFalse(json.loads(res1.data)['success'])
 
-        res2 = self.client().post('/questions', json=dict(question='another question?',
-                                                          answer='another answer',
-                                                          difficulty=2, category=1,
-                                                          wrong_arg=None))
+        res2 = self.client().post('/questions', json={'question': 'another question?',
+                                                      'answer': 'another answer',
+                                                      'difficulty': 2, 'category': 1,
+                                                      'wrong_arg': None})
         self.assertEqual(res2.status_code, 400)
         self.assertFalse(json.loads(res2.data)['success'])
 
     def test_422_add_question_invalid_args(self):
-        res1 = self.client().post('/questions', json=dict(question='', answer='',
-                                                          difficulty=2, category=1))
+        res1 = self.client().post('/questions', json={'question': '', 'answer': '',
+                                                      'difficulty': 2, 'category': 1})
         self.assertEqual(res1.status_code, 422)
         self.assertFalse(json.loads(res1.data)['success'])
 
-        res2 = self.client().post('/questions', json=dict(question='q', answer='a',
-                                                          difficulty=10, category='none'))
+        res2 = self.client().post('/questions', json={'question': 'q', 'answer': 'a',
+                                                      'difficulty': 10, 'category': 'none'})
         self.assertEqual(res2.status_code, 422)
         self.assertFalse(json.loads(res2.data)['success'])
 
@@ -144,10 +144,51 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertFalse(json.loads(res.data)['success'])
 
-    """
-    TODO
-    Write at least one test for each test for successful operation and for expected errors.
-    """
+    def test_play_quiz_single_category(self):
+        res1 = self.client().post('/quizzes', json={'previous_questions': [],
+                                                    'quiz_category': {'id': 1}})
+        data1 = json.loads(res1.data)
+        self.assertEqual(res1.status_code, 200)
+        self.assertTrue(data1['success'])
+        self.assertEqual(data1['question']['id'], 1)
+        self.assertEqual(data1['question']['category'], 1)
+
+        res2 = self.client().post('/quizzes', json={'previous_questions': [1],
+                                                    'quiz_category': {'id': 1}})
+        data2 = json.loads(res2.data)
+        self.assertEqual(res2.status_code, 200)
+        self.assertTrue(data2['success'])
+        self.assertNotIn('question', data2)
+
+    def test_play_quiz_all_categories(self):
+        with self.app.app_context():
+            questions = [Question(f'q{c_id}', f'a{c_id}', c_id, 1) for c_id in [2, 3, 4]]
+            self.db.session.add_all(questions)
+            self.db.session.commit()
+
+        res = self.client().post('/quizzes', json={'previous_questions': [],
+                                                   'quiz_category': {'id': 0}})
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'])
+        self.assertIn(data['question']['category'], [1, 2, 3, 4])
+
+    def test_400_play_quiz_invalid_args(self):
+        res1 = self.client().post('/quizzes', json={'previous_questions': [],
+                                                    'category': {'id': 1}})
+        self.assertEqual(res1.status_code, 400)
+        self.assertFalse(json.loads(res1.data)['success'])
+
+        res2 = self.client().post('/quizzes', json={'previous_questions': [],
+                                                    'quiz_category': {'category_id': 1}})
+        self.assertEqual(res2.status_code, 400)
+        self.assertFalse(json.loads(res2.data)['success'])
+
+    def test_404_play_quiz_empty_category(self):
+        res = self.client().post('/quizzes', json={'previous_questions': [],
+                                                   'quiz_category': {'id': 2}})
+        self.assertEqual(res.status_code, 404)
+        self.assertFalse(json.loads(res.data)['success'])
 
 
 # Make the tests conveniently executable

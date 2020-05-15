@@ -6,6 +6,7 @@ from models import db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
+
 def create_app(config_object='config.Config'):
     # create and configure the app
     app = Flask(__name__)
@@ -112,18 +113,29 @@ def create_app(config_object='config.Config'):
                         'total_questions': len(questions),
                         'current_category': category})
 
+    @app.route('/quizzes', methods=['POST'])
+    def play_quiz():
+        data = request.get_json()
+        try:
+            asked_questions = set(data['previous_questions'])
+            c_id = data['quiz_category']['id']
+        except KeyError:
+            abort(400)
 
-    '''
-    @TODO: 
-    Create a POST endpoint to get questions to play the quiz. 
-    This endpoint should take category and previous question parameters 
-    and return a random questions within the given category, 
-    if provided, and that is not one of the previous questions. 
-  
-    TEST: In the "Play" tab, after a user selects "All" or a category,
-    one question at a time is displayed, the user is allowed to answer
-    and shown whether they were correct or not. 
-    '''
+        query = Question.query.with_entities(Question.id)
+        all_questions = query.all() if c_id == 0 else query.filter_by(category=c_id).all()
+        if not all_questions:
+            abort(404)
+
+        response = {'success': True}
+        if len(asked_questions) == len(all_questions):
+            return jsonify(response)
+
+        new_questions = [i[0] for i in all_questions if i[0] not in asked_questions]
+        q_id = random.choice(new_questions)
+        new_question = Question.query.get(q_id)
+        response['question'] = new_question.format()
+        return jsonify(response)
 
     @app.errorhandler(400)
     def bad_request(error):
@@ -142,5 +154,3 @@ def create_app(config_object='config.Config'):
         return jsonify({'success': False, 'error': 500, 'message': 'Internal server error'}), 500
 
     return app
-
-    
