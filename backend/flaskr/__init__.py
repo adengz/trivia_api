@@ -21,8 +21,10 @@ def create_app(config_object='config.Config'):
 
     @app.after_request
     def after_request(response):
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,true')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers',
+                             'Content-Type,Authorization,true')
+        response.headers.add('Access-Control-Allow-Methods',
+                             'GET,POST,DELETE,OPTIONS')
         return response
 
     @app.route('/categories', methods=['GET'])
@@ -96,7 +98,9 @@ def create_app(config_object='config.Config'):
         if not search_term:
             abort(422)
 
-        questions = Question.query.filter(Question.question.like('%{}%'.format(search_term))).order_by(Question.id).all()
+        query = Question.query.filter(Question.question.
+                                      like(f'%{search_term}%'))
+        questions = query.order_by(Question.id).all()
         return jsonify({'success': True,
                         'questions': [q.format() for q in questions],
                         'total_questions': len(questions),
@@ -104,7 +108,8 @@ def create_app(config_object='config.Config'):
 
     @app.route('/categories/<int:category>/questions', methods=['GET'])
     def get_questions_in_category(category):
-        questions = Question.query.filter_by(category=category).order_by(Question.id).all()
+        query = Question.query.filter_by(category=category)
+        questions = query.order_by(Question.id).all()
         if not questions:
             abort(404)
 
@@ -123,7 +128,10 @@ def create_app(config_object='config.Config'):
             abort(400)
 
         query = Question.query.with_entities(Question.id)
-        all_questions = query.all() if c_id == 0 else query.filter_by(category=c_id).all()
+        if c_id == 0:
+            all_questions = query.all()
+        else:
+            all_questions = query.filter_by(category=c_id).all()
         if not all_questions:
             abort(404)
 
@@ -131,7 +139,8 @@ def create_app(config_object='config.Config'):
         if len(asked_questions) == len(all_questions):
             return jsonify(response)
 
-        new_questions = [i[0] for i in all_questions if i[0] not in asked_questions]
+        new_questions = [i[0] for i in all_questions
+                         if i[0] not in asked_questions]
         q_id = random.choice(new_questions)
         new_question = Question.query.get(q_id)
         response['question'] = new_question.format()
@@ -139,18 +148,26 @@ def create_app(config_object='config.Config'):
 
     @app.errorhandler(400)
     def bad_request(error):
-        return jsonify({'success': False, 'error': 400, 'message': 'Bad request'}), 400
+        return jsonify({'success': False,
+                        'error': 400,
+                        'message': 'Bad request'}), 400
 
     @app.errorhandler(404)
     def not_found(error):
-        return jsonify({'success': False, 'error': 404, 'message': 'Not found'}), 404
+        return jsonify({'success': False,
+                        'error': 404,
+                        'message': 'Not found'}), 404
 
     @app.errorhandler(422)
     def unprocessable_entity(error):
-        return jsonify({'success': False, 'error': 422, 'message': 'Unprocessable enitty'}), 422
+        return jsonify({'success': False,
+                        'error': 422,
+                        'message': 'Unprocessable enitty'}), 422
 
     @app.errorhandler(500)
     def internal_server_error(error):
-        return jsonify({'success': False, 'error': 500, 'message': 'Internal server error'}), 500
+        return jsonify({'success': False,
+                        'error': 500,
+                        'message': 'Internal server error'}), 500
 
     return app
