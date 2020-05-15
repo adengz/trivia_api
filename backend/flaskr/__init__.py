@@ -58,6 +58,7 @@ def create_app(config_object='config.Config'):
         try:
             question.delete()
         except:
+            db.session.rollback()
             abort(500)
         return jsonify({'success': True})
 
@@ -81,6 +82,7 @@ def create_app(config_object='config.Config'):
         try:
             question.insert()
         except:
+            db.session.rollback()
             abort(500)
         return jsonify({'success': True})
 
