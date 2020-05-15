@@ -16,22 +16,19 @@ class TriviaTestCase(unittest.TestCase):
         cls.db = db
         cls.db.init_app(cls.app)
 
-        # binds the app to the current context
-        with cls.app.app_context():
-            # create all tables
-            cls.db.create_all()
-            # create test db entries
+    def setUp(self):
+        with self.app.app_context():
+            self.db.create_all()
             category = Category(type='category')
-            cls.db.session.add(category)
+            self.db.session.add(category)
             question = Question(question='question?', answer='answer',
                                 category=1, difficulty=1)
-            cls.db.session.add(question)
-            cls.db.session.commit()
+            self.db.session.add(question)
+            self.db.session.commit()
 
-    @classmethod
-    def tearDownClass(cls):
-        with cls.app.app_context():
-            cls.db.drop_all()
+    def tearDown(self):
+        with self.app.app_context():
+            self.db.drop_all()
 
     def test_get_paginated_questions(self):
         res = self.client().get('/questions')
